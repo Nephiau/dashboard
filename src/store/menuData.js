@@ -68,3 +68,8 @@ export const MENU_ITEMS = [
 export function findMenu(menuId) {
   return MENU_ITEMS.find((menu) => menu.id === menuId) ?? null
 }
+
+export function priceOf(prices, menu) {
+  const override = prices?.[menu.id]
+  return Number.isFinite(override) ? override : menu.sellPrice
+}

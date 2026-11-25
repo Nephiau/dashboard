@@ -23,5 +23,6 @@ export function createSampleState() {
       },
     ],
     transactions: [],
+    prices: {},
   }
 }

@@ -1,8 +1,8 @@
 import { createSampleState } from './sampleData'
-import { findMenu } from './menuData'
+import { findMenu, priceOf } from './menuData'
 
 export const STORAGE_KEY = 'kasir.pos.v4'
-export const SCHEMA_VERSION = 2
+export const SCHEMA_VERSION = 3
 
 function uid(prefix) {
   const random =
@@ -158,13 +158,14 @@ function checkout(state, payload) {
     }
 
     const totalCost = consumedBatches.reduce((sum, batch) => sum + batch.qty * batch.unitBuyPrice, 0)
-    const totalRevenue = qtySold * menu.sellPrice
+    const unitSellPrice = priceOf(state.prices, menu)
+    const totalRevenue = qtySold * unitSellPrice
 
     lines.push({
       menuId: menu.id,
       name: menu.name,
       qtySold,
-      unitSellPrice: menu.sellPrice,
+      unitSellPrice,
       totalRevenue,
       totalCost,
       profit: totalRevenue - totalCost,
@@ -235,6 +236,7 @@ function voidTransaction(state, transactionId) {
   })
 
   return {
+    ...state,
     products,
     transactions: state.transactions.map((candidate) =>
       candidate.id === transactionId
@@ -253,6 +255,20 @@ function togglePaid(state, transactionId) {
         : transaction,
     ),
   }
+}
+
+function setPrice(state, payload) {
+  const menu = findMenu(payload.menuId)
+  if (!menu) return state
+
+  const value = Math.max(0, truncateInt(payload.sellPrice))
+  const prices = { ...(state.prices ?? {}) }
+  if (value === menu.sellPrice) {
+    delete prices[menu.id]
+  } else {
+    prices[menu.id] = value
+  }
+  return { ...state, prices }
 }
 
 function fail(message) {
@@ -341,9 +357,19 @@ export function readState(raw) {
   if (!Array.isArray(raw.products) || !Array.isArray(raw.transactions)) {
     fail('Saved data is incomplete: ingredients or transactions are missing.')
   }
+  const prices = {}
+  if (raw.prices && typeof raw.prices === 'object' && !Array.isArray(raw.prices)) {
+    for (const [menuId, value] of Object.entries(raw.prices)) {
+      if (!findMenu(menuId)) continue
+      const amount = Number(value)
+      if (Number.isFinite(amount) && amount >= 0) prices[menuId] = Math.trunc(amount)
+    }
+  }
+
   return {
     products: raw.products.map(validateProduct),
     transactions: raw.transactions.map(validateTransaction),
+    prices,
   }
 }
 
@@ -373,8 +399,10 @@ export function reducer(state, action) {
       return togglePaid(state, action.payload.transactionId)
     case 'voidTransaction':
       return voidTransaction(state, action.payload.transactionId)
+    case 'setPrice':
+      return setPrice(state, action.payload)
     case 'clear':
-      return { products: [], transactions: [] }
+      return { products: [], transactions: [], prices: {} }
     default:
       return state
   }

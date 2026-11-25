@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, Check, ShoppingBag, Trash2 } from 'lucide-react'
 import { useStore } from '../store/StoreContext'
-import { MENU_ITEMS } from '../store/menuData'
+import { MENU_ITEMS, priceOf } from '../store/menuData'
 import { cartQtyFor, cartRequirements, menuAvailability, menuIngredients } from '../utils/stock'
 import { formatRupiah } from '../utils/format'
 import { Badge } from '../components/Badges'
 import Sheet from '../components/Sheet'
 import { Stepper, Toggle } from '../components/Controls'
 
-function MenuCard({ menu, qty, available, products, onAdd }) {
+function MenuCard({ menu, price, qty, available, products, onAdd }) {
   const out = available === 0
   const low = !out && available <= 5
   const ingredients = menuIngredients(menu, products)
@@ -33,7 +33,7 @@ function MenuCard({ menu, qty, available, products, onAdd }) {
         ) : null}
       </div>
       <span className="text-sm font-semibold tabular-nums text-slate-900">
-        {formatRupiah(menu.sellPrice)}
+        {formatRupiah(price)}
       </span>
       <p className="text-[11px] leading-snug tabular-nums text-slate-500">
         {ingredients.map((item) => `${item.qty} × ${item.name}`).join(' · ')}
@@ -52,7 +52,7 @@ function MenuCard({ menu, qty, available, products, onAdd }) {
 }
 
 export default function Cashier() {
-  const { products, checkout } = useStore()
+  const { products, prices, checkout } = useStore()
   const [cart, setCart] = useState([])
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [isPaid, setIsPaid] = useState(true)
@@ -74,10 +74,10 @@ export default function Cashier() {
           if (!menu) return null
           const qty = Math.min(line.qty, availability.get(menu.id) ?? 0)
           if (qty <= 0) return null
-          return { menu, qty, lineTotal: qty * menu.sellPrice }
+          return { menu, qty, lineTotal: qty * priceOf(prices, menu) }
         })
         .filter(Boolean),
-    [cart, availability],
+    [cart, availability, prices],
   )
 
   const requirements = useMemo(
@@ -153,6 +153,7 @@ export default function Cashier() {
           <MenuCard
             key={menu.id}
             menu={menu}
+            price={priceOf(prices, menu)}
             products={products}
             qty={cartQtyFor(cart, menu.id)}
             available={availability.get(menu.id) ?? 0}
@@ -246,7 +247,7 @@ export default function Cashier() {
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-slate-900">{menu.name}</p>
                   <p className="text-xs tabular-nums text-slate-500">
-                    {formatRupiah(menu.sellPrice)} × {qty} = {formatRupiah(lineTotal)}
+                    {formatRupiah(priceOf(prices, menu))} × {qty} = {formatRupiah(lineTotal)}
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5">

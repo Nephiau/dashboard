@@ -15,6 +15,7 @@ export function StoreProvider({ children }) {
           savedAt: new Date().toISOString(),
           products: state.products,
           transactions: state.transactions,
+          prices: state.prices,
         }),
       )
     } catch {
@@ -26,6 +27,7 @@ export function StoreProvider({ children }) {
     () => ({
       products: state.products,
       transactions: state.transactions,
+      prices: state.prices,
       addStock: (payload) => dispatch({ type: 'addStock', payload }),
       editBatch: (payload) => dispatch({ type: 'editBatch', payload }),
       deleteBatch: (payload) => dispatch({ type: 'deleteBatch', payload }),
@@ -35,6 +37,7 @@ export function StoreProvider({ children }) {
         dispatch({ type: 'togglePaid', payload: { transactionId } }),
       voidTransaction: (transactionId) =>
         dispatch({ type: 'voidTransaction', payload: { transactionId } }),
+      setPrice: (payload) => dispatch({ type: 'setPrice', payload }),
       clearData: () => dispatch({ type: 'clear' }),
     }),
     [state, dispatch],

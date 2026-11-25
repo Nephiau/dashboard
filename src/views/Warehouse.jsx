@@ -11,7 +11,7 @@ import {
   YAxis,
 } from 'recharts'
 import { useStore } from '../store/StoreContext'
-import { MENU_ITEMS } from '../store/menuData'
+import { MENU_ITEMS, priceOf } from '../store/menuData'
 import {
   activeBatches,
   isLowStock,
@@ -359,7 +359,7 @@ function BatchRow({ batch, index, onEdit, onDelete }) {
 }
 
 export default function Warehouse() {
-  const { products, deleteBatch, deleteProduct } = useStore()
+  const { products, prices, deleteBatch, deleteProduct } = useStore()
   const [addOpen, setAddOpen] = useState(false)
   const [expanded, setExpanded] = useState(null)
   const [editing, setEditing] = useState(null)
@@ -519,7 +519,7 @@ export default function Warehouse() {
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-slate-900">{menu.name}</p>
                   <p className="text-xs tabular-nums text-slate-500">
-                    {formatRupiah(menu.sellPrice)} ·{' '}
+                    {formatRupiah(priceOf(prices, menu))} ·{' '}
                     {menuIngredients(menu, products)
                       .map((item) => `−${item.qty} ${item.name}`)
                       .join(', ')}
