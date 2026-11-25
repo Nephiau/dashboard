@@ -44,4 +44,4 @@ Thumbs.db
 Desktop.ini
 
 # Local machine-specific agent state (permissions, shell history)
-.commandcode/settings.json
+.commandcode/
